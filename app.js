@@ -26,6 +26,9 @@ const adminInvestmentRouter = require('./routes/adminInvestment');
 const memberInvestmentRouter = require('./routes/memberInvestment');
 const societyMemberInvestmentRouter = require('./routes/societyMemberInvestment');
 const adminInvestmentApprovalRouter = require('./routes/adminInvestmentApproval');
+const adminSocietyMemberInvestmentRouter = require('./routes/adminSocietyMemberInvestment');
+const adminStudentDocumentRouter = require('./routes/adminStudentDocument');
+const studentDocumentRouter = require('./routes/studentDocument');
 
 // Import middleware
 const { securityHeaders, corsOptions, requestLogger, errorHandler, notFoundHandler } = require('./middleware/security');
@@ -72,6 +75,9 @@ app.use('/api/admin/investment', adminInvestmentRouter);
 app.use('/api/society-member/investment', memberInvestmentRouter);
 app.use('/api/society-member/investment-applications', societyMemberInvestmentRouter);
 app.use('/api/admin/investment-approval', adminInvestmentApprovalRouter);
+app.use('/api/admin/society-member-investment', adminSocietyMemberInvestmentRouter);
+app.use('/api/admin/student-documents', adminStudentDocumentRouter);
+app.use('/api/student/documents', studentDocumentRouter);
 
 // Error handling middleware
 app.use(notFoundHandler);

@@ -50,12 +50,88 @@ const getAllStudents = async (req, res) => {
       filter.isVerified = req.query.isVerified === 'true';
     }
 
+    // Build sort object
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+    const sort = { [sortBy]: sortOrder };
+
     // Get students with pagination
     const students = await Student.find(filter)
       .select('-password -originalPassword') // Exclude passwords
-      .sort({ createdAt: -1 })
+      .sort(sort)
       .skip(skip)
       .limit(limit);
+
+    // Get enrollments for these students to include course and batch information
+    const studentIds = students.map(student => student._id);
+    const enrollments = await Enrollment.find({ studentId: { $in: studentIds } })
+      .populate({
+        path: 'courseId',
+        select: 'title category type instructor duration durationUnit price currency'
+      })
+      .populate({
+        path: 'batchId',
+        select: 'name startDate endDate maxStudents price currency timeSlots'
+      })
+      .select('studentId courseId batchId enrollmentDate status paymentStatus progress');
+
+    // Group enrollments by student
+    const enrollmentsByStudent = {};
+    enrollments.forEach(enrollment => {
+      const studentId = enrollment.studentId.toString();
+      if (!enrollmentsByStudent[studentId]) {
+        enrollmentsByStudent[studentId] = [];
+      }
+      enrollmentsByStudent[studentId].push({
+        enrollmentId: enrollment._id,
+        enrollmentDate: enrollment.enrollmentDate,
+        status: enrollment.status,
+        paymentStatus: enrollment.paymentStatus,
+        progress: enrollment.progress,
+        course: enrollment.courseId ? {
+          id: enrollment.courseId._id,
+          title: enrollment.courseId.title,
+          category: enrollment.courseId.category,
+          type: enrollment.courseId.type,
+          instructor: enrollment.courseId.instructor,
+          duration: enrollment.courseId.duration,
+          durationUnit: enrollment.courseId.durationUnit,
+          price: enrollment.courseId.price,
+          currency: enrollment.courseId.currency
+        } : null,
+        batch: enrollment.batchId ? {
+          id: enrollment.batchId._id,
+          name: enrollment.batchId.name,
+          startDate: enrollment.batchId.startDate,
+          endDate: enrollment.batchId.endDate,
+          maxStudents: enrollment.batchId.maxStudents,
+          price: enrollment.batchId.price,
+          currency: enrollment.batchId.currency,
+          timeSlots: enrollment.batchId.timeSlots
+        } : null
+      });
+    });
+
+    // Combine student data with their enrollments
+    const studentsWithEnrollments = students.map(student => {
+      const studentId = student._id.toString();
+      const studentEnrollments = enrollmentsByStudent[studentId] || [];
+      
+      // Calculate enrollment statistics
+      const enrollmentStats = {
+        totalEnrollments: studentEnrollments.length,
+        activeEnrollments: studentEnrollments.filter(e => e.status === 'enrolled' || e.status === 'active').length,
+        completedEnrollments: studentEnrollments.filter(e => e.status === 'completed').length,
+        totalCourses: [...new Set(studentEnrollments.map(e => e.course?.id).filter(Boolean))].length,
+        totalBatches: [...new Set(studentEnrollments.map(e => e.batch?.id).filter(Boolean))].length
+      };
+
+      return {
+        ...student.toObject(),
+        enrollments: studentEnrollments,
+        enrollmentStats
+      };
+    });
 
     // Get total count for pagination
     const totalStudents = await Student.countDocuments(filter);
@@ -65,7 +141,7 @@ const getAllStudents = async (req, res) => {
       success: true,
       message: 'Students retrieved successfully',
       data: {
-        students,
+        students: studentsWithEnrollments,
         pagination: {
           currentPage: page,
           totalPages,

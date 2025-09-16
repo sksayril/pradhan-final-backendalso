@@ -44,7 +44,7 @@ router.get('/', function(req, res, next) {
         adminSocietyMemberReject: 'POST /api/kyc/admin/society-member/reject'
       },
       userManagement: {
-        getAllStudents: 'GET /api/user-management/students',
+        getAllStudents: 'GET /api/user-management/students (includes course and batch data)',
         getAllSocietyMembers: 'GET /api/user-management/society-members',
         getAllAdmins: 'GET /api/user-management/admins',
         getUserStatistics: 'GET /api/user-management/statistics',
@@ -177,6 +177,53 @@ router.get('/', function(req, res, next) {
         getPendingApplicationsStatistics: 'GET /api/admin/investment-approval/pending-statistics',
         bulkApproveApplications: 'PATCH /api/admin/investment-approval/applications/bulk-approve',
         bulkRejectApplications: 'PATCH /api/admin/investment-approval/applications/bulk-reject'
+      },
+      adminSocietyMemberInvestment: {
+        getPendingApplications: 'GET /api/admin/society-member-investment/applications/pending',
+        getApprovedApplications: 'GET /api/admin/society-member-investment/applications/approved',
+        getAllApplications: 'GET /api/admin/society-member-investment/applications',
+        getApplicationDetails: 'GET /api/admin/society-member-investment/applications/:applicationId',
+        approveApplication: 'PATCH /api/admin/society-member-investment/applications/:applicationId/approve',
+        rejectApplication: 'PATCH /api/admin/society-member-investment/applications/:applicationId/reject',
+        getApprovedInvestments: 'GET /api/admin/society-member-investment/investments',
+        getInvestmentDetails: 'GET /api/admin/society-member-investment/investments/:investmentId',
+        recordEMIPayment: 'POST /api/admin/society-member-investment/investments/:investmentId/emi-payment',
+        applyPenalty: 'POST /api/admin/society-member-investment/investments/:investmentId/penalty',
+        getEMIStatistics: 'GET /api/admin/society-member-investment/statistics/emi'
+      },
+      societyMemberInvestmentEnhanced: {
+        getAllData: 'GET /api/society-member/investment-applications/data/all',
+        getPendingStatus: 'GET /api/society-member/investment-applications/status/pending',
+        getEMIList: 'GET /api/society-member/investment-applications/emis/list'
+      },
+       adminStudentDocuments: {
+         createMarksheet: 'POST /api/admin/student-documents/marksheets',
+         getAllMarksheets: 'GET /api/admin/student-documents/marksheets',
+         getMarksheetById: 'GET /api/admin/student-documents/marksheets/:marksheetId',
+         updateMarksheet: 'PUT /api/admin/student-documents/marksheets/:marksheetId',
+         verifyMarksheet: 'PATCH /api/admin/student-documents/marksheets/:marksheetId/verify',
+         getMarksheetsByStudent: 'GET /api/admin/student-documents/students/:studentId/marksheets (enhanced with filtering, statistics, and detailed data)',
+         generateCertificateFromMarksheet: 'POST /api/admin/student-documents/certificates/generate-from-marksheet/:marksheetNumber',
+         createCertificate: 'POST /api/admin/student-documents/certificates (no certificateUrl required)',
+         getAllCertificates: 'GET /api/admin/student-documents/certificates',
+         getCertificateById: 'GET /api/admin/student-documents/certificates/:certificateId',
+         updateCertificate: 'PUT /api/admin/student-documents/certificates/:certificateId',
+         verifyCertificate: 'PATCH /api/admin/student-documents/certificates/:certificateId/verify',
+         issueCertificate: 'PATCH /api/admin/student-documents/certificates/:certificateId/issue',
+         getCertificatesByStudent: 'GET /api/admin/student-documents/students/:studentId/certificates (enhanced with filtering, statistics, and detailed data)',
+         getStudentCertificateData: 'GET /api/admin/student-documents/students/:studentId/certificate-data (complete certificate data with student, course, batch, marksheet info)',
+         getDocumentStatistics: 'GET /api/admin/student-documents/statistics'
+       },
+      studentDocuments: {
+        getMyMarksheets: 'GET /api/student/documents/marksheets',
+        getMarksheetDetails: 'GET /api/student/documents/marksheets/:marksheetId',
+        getMarksheetByVerificationCode: 'GET /api/student/documents/marksheets/verify/:verificationCode',
+        getMyCertificates: 'GET /api/student/documents/certificates',
+        getCertificateDetails: 'GET /api/student/documents/certificates/:certificateId',
+        getCertificateByVerificationCode: 'GET /api/student/documents/certificates/verify/:verificationCode',
+        getMyDocumentSummary: 'GET /api/student/documents/summary',
+        verifyMarksheetPublic: 'GET /api/student/documents/public/verify/marksheet/:verificationCode',
+        verifyCertificatePublic: 'GET /api/student/documents/public/verify/certificate/:verificationCode'
       }
     },
     documentation: {

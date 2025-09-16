@@ -570,6 +570,291 @@ const getAvailableInvestmentPlans = async (req, res) => {
   }
 };
 
+// Get all investment data for society member (applications + investments)
+const getAllInvestmentData = async (req, res) => {
+  try {
+    const memberId = req.user._id;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get all applications
+    const applications = await InvestmentApplication.find({ memberId })
+      .populate('planId', 'planName planType interestRate tenureMonths')
+      .populate('approvedBy', 'firstName lastName email')
+      .populate('rejectedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    // Get all investments
+    const investments = await Investment.find({ memberId })
+      .populate('planId', 'planName planType interestRate tenureMonths')
+      .populate('createdBy', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    // Get application summaries
+    const applicationSummaries = applications.map(app => ({
+      type: 'application',
+      ...app.getApplicationSummary(),
+      plan: app.planId,
+      approvedBy: app.approvedBy,
+      rejectedBy: app.rejectedBy,
+      applicationDate: app.applicationDate,
+      approvalDate: app.approvalDate,
+      rejectionDate: app.rejectionDate,
+      rejectionReason: app.rejectionReason
+    }));
+
+    // Get investment summaries
+    const investmentSummaries = investments.map(inv => {
+      const summary = inv.getInvestmentSummary();
+      const overdueEMIs = inv.getOverdueEMIs();
+      const nextEMIDueDate = inv.getNextEMIDueDate();
+      
+      return {
+        type: 'investment',
+        ...summary,
+        plan: inv.planId,
+        createdBy: inv.createdBy,
+        overdueEMIs: overdueEMIs.length,
+        nextEMIDueDate,
+        emiSchedule: inv.emiSchedule.map(emi => ({
+          emiNumber: emi.emiNumber,
+          dueDate: emi.dueDate,
+          amount: emi.amount,
+          status: emi.status,
+          paidDate: emi.paidDate,
+          penaltyAmount: emi.penaltyAmount,
+          remarks: emi.remarks,
+          isOverdue: emi.status === 'pending' && emi.dueDate < new Date()
+        }))
+      };
+    });
+
+    // Combine and sort by date
+    const allData = [...applicationSummaries, ...investmentSummaries]
+      .sort((a, b) => new Date(b.createdAt || b.applicationDate || b.investmentDate) - new Date(a.createdAt || a.applicationDate || a.investmentDate));
+
+    // Apply pagination
+    const paginatedData = allData.slice(skip, skip + parseInt(limit));
+
+    // Calculate statistics
+    const stats = {
+      totalApplications: applications.length,
+      pendingApplications: applications.filter(app => app.status === 'pending').length,
+      approvedApplications: applications.filter(app => app.status === 'approved').length,
+      rejectedApplications: applications.filter(app => app.status === 'rejected').length,
+      totalInvestments: investments.length,
+      activeInvestments: investments.filter(inv => inv.status === 'active').length,
+      completedInvestments: investments.filter(inv => inv.status === 'completed').length,
+      totalEMIs: investments.reduce((sum, inv) => sum + inv.emiSchedule.length, 0),
+      paidEMIs: investments.reduce((sum, inv) => sum + inv.emiSchedule.filter(emi => emi.status === 'paid').length, 0),
+      pendingEMIs: investments.reduce((sum, inv) => sum + inv.emiSchedule.filter(emi => emi.status === 'pending').length, 0),
+      overdueEMIs: investments.reduce((sum, inv) => sum + inv.getOverdueEMIs().length, 0)
+    };
+
+    res.json({
+      success: true,
+      message: 'All investment data retrieved successfully',
+      data: {
+        investments: paginatedData,
+        statistics: stats,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(allData.length / parseInt(limit)),
+          totalItems: allData.length,
+          hasNextPage: skip + paginatedData.length < allData.length,
+          hasPrevPage: parseInt(page) > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all investment data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching investment data'
+    });
+  }
+};
+
+// Get pending applications and payments status
+const getPendingStatus = async (req, res) => {
+  try {
+    const memberId = req.user._id;
+
+    // Get pending applications
+    const pendingApplications = await InvestmentApplication.find({ 
+      memberId, 
+      status: 'pending' 
+    })
+      .populate('planId', 'planName planType interestRate tenureMonths')
+      .sort({ applicationDate: -1 });
+
+    // Get active investments with pending EMIs
+    const activeInvestments = await Investment.find({ 
+      memberId, 
+      status: 'active' 
+    })
+      .populate('planId', 'planName planType interestRate tenureMonths')
+      .sort({ createdAt: -1 });
+
+    // Process pending applications
+    const pendingApps = pendingApplications.map(app => ({
+      applicationId: app.applicationId,
+      plan: app.planId,
+      investmentAmount: app.investmentAmount,
+      monthlyEMI: app.monthlyEMI,
+      applicationDate: app.applicationDate,
+      daysPending: Math.ceil((new Date() - app.applicationDate) / (1000 * 60 * 60 * 24))
+    }));
+
+    // Process active investments with pending EMIs
+    const pendingPayments = [];
+    activeInvestments.forEach(investment => {
+      const pendingEMIs = investment.emiSchedule.filter(emi => emi.status === 'pending');
+      const overdueEMIs = pendingEMIs.filter(emi => emi.dueDate < new Date());
+      
+      if (pendingEMIs.length > 0) {
+        pendingPayments.push({
+          investmentId: investment.investmentId,
+          plan: investment.planId,
+          principalAmount: investment.principalAmount,
+          monthlyInstallment: investment.monthlyInstallment,
+          pendingEMIs: pendingEMIs.length,
+          overdueEMIs: overdueEMIs.length,
+          nextEMIDueDate: investment.getNextEMIDueDate(),
+          totalPendingAmount: pendingEMIs.reduce((sum, emi) => sum + emi.amount, 0),
+          overdueAmount: overdueEMIs.reduce((sum, emi) => sum + emi.amount, 0),
+          emiDetails: pendingEMIs.map(emi => ({
+            emiNumber: emi.emiNumber,
+            dueDate: emi.dueDate,
+            amount: emi.amount,
+            isOverdue: emi.dueDate < new Date(),
+            daysOverdue: emi.dueDate < new Date() 
+              ? Math.ceil((new Date() - emi.dueDate) / (1000 * 60 * 60 * 24))
+              : 0
+          }))
+        });
+      }
+    });
+
+    // Calculate summary
+    const summary = {
+      pendingApplications: pendingApps.length,
+      activeInvestments: activeInvestments.length,
+      totalPendingEMIs: pendingPayments.reduce((sum, inv) => sum + inv.pendingEMIs, 0),
+      totalOverdueEMIs: pendingPayments.reduce((sum, inv) => sum + inv.overdueEMIs, 0),
+      totalPendingAmount: pendingPayments.reduce((sum, inv) => sum + inv.totalPendingAmount, 0),
+      totalOverdueAmount: pendingPayments.reduce((sum, inv) => sum + inv.overdueAmount, 0)
+    };
+
+    res.json({
+      success: true,
+      message: 'Pending status retrieved successfully',
+      data: {
+        pendingApplications: pendingApps,
+        pendingPayments,
+        summary
+      }
+    });
+
+  } catch (error) {
+    console.error('Get pending status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching pending status'
+    });
+  }
+};
+
+// Get EMI list for all investments
+const getEMIList = async (req, res) => {
+  try {
+    const memberId = req.user._id;
+    const { status, investmentId, page = 1, limit = 20 } = req.query;
+
+    // Build filter
+    const filter = { memberId };
+    if (investmentId) filter.investmentId = investmentId.toUpperCase();
+
+    // Get investments
+    const investments = await Investment.find(filter)
+      .populate('planId', 'planName planType interestRate tenureMonths')
+      .sort({ createdAt: -1 });
+
+    // Collect all EMIs
+    let allEMIs = [];
+    investments.forEach(investment => {
+      investment.emiSchedule.forEach(emi => {
+        allEMIs.push({
+          investmentId: investment.investmentId,
+          plan: investment.planId,
+          emiNumber: emi.emiNumber,
+          dueDate: emi.dueDate,
+          amount: emi.amount,
+          status: emi.status,
+          paidDate: emi.paidDate,
+          penaltyAmount: emi.penaltyAmount,
+          remarks: emi.remarks,
+          isOverdue: emi.status === 'pending' && emi.dueDate < new Date(),
+          daysOverdue: emi.status === 'pending' && emi.dueDate < new Date() 
+            ? Math.ceil((new Date() - emi.dueDate) / (1000 * 60 * 60 * 24))
+            : 0
+        });
+      });
+    });
+
+    // Filter by status if provided
+    if (status) {
+      allEMIs = allEMIs.filter(emi => emi.status === status);
+    }
+
+    // Sort by due date
+    allEMIs.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+    // Apply pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const paginatedEMIs = allEMIs.slice(skip, skip + parseInt(limit));
+
+    // Calculate summary statistics
+    const stats = {
+      totalEMIs: allEMIs.length,
+      paidEMIs: allEMIs.filter(emi => emi.status === 'paid').length,
+      pendingEMIs: allEMIs.filter(emi => emi.status === 'pending').length,
+      overdueEMIs: allEMIs.filter(emi => emi.isOverdue).length,
+      totalAmount: allEMIs.reduce((sum, emi) => sum + emi.amount, 0),
+      paidAmount: allEMIs.filter(emi => emi.status === 'paid').reduce((sum, emi) => sum + emi.amount, 0),
+      pendingAmount: allEMIs.filter(emi => emi.status === 'pending').reduce((sum, emi) => sum + emi.amount, 0),
+      overdueAmount: allEMIs.filter(emi => emi.isOverdue).reduce((sum, emi) => sum + emi.amount, 0),
+      totalPenalty: allEMIs.reduce((sum, emi) => sum + emi.penaltyAmount, 0)
+    };
+
+    res.json({
+      success: true,
+      message: 'EMI list retrieved successfully',
+      data: {
+        emis: paginatedEMIs,
+        statistics: stats,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(allEMIs.length / parseInt(limit)),
+          totalEMIs: allEMIs.length,
+          hasNextPage: skip + paginatedEMIs.length < allEMIs.length,
+          hasPrevPage: parseInt(page) > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get EMI list error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching EMI list'
+    });
+  }
+};
+
 module.exports = {
   getMyInvestmentApplications,
   getInvestmentApplicationDetails,
@@ -578,5 +863,8 @@ module.exports = {
   getEMISchedule,
   getPaymentHistory,
   cancelApplication,
-  getAvailableInvestmentPlans
+  getAvailableInvestmentPlans,
+  getAllInvestmentData,
+  getPendingStatus,
+  getEMIList
 };

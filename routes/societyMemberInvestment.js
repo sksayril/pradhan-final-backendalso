@@ -8,7 +8,10 @@ const {
   getEMISchedule,
   getPaymentHistory,
   cancelApplication,
-  getAvailableInvestmentPlans
+  getAvailableInvestmentPlans,
+  getAllInvestmentData,
+  getPendingStatus,
+  getEMIList
 } = require('../controllers/societyMemberInvestmentController');
 const { authenticate } = require('../middleware/auth');
 
@@ -62,6 +65,26 @@ router.get('/:applicationId/emi-schedule',
 router.get('/:applicationId/payment-history', 
   authenticate, 
   getPaymentHistory
+);
+
+// New comprehensive endpoints
+
+// Get all investment data (applications + investments)
+router.get('/data/all', 
+  authenticate, 
+  getAllInvestmentData
+);
+
+// Get pending status (applications and payments)
+router.get('/status/pending', 
+  authenticate, 
+  getPendingStatus
+);
+
+// Get EMI list for all investments
+router.get('/emis/list', 
+  authenticate, 
+  getEMIList
 );
 
 module.exports = router;
