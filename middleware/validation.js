@@ -1,3 +1,5 @@
+const { body, param } = require('express-validator');
+
 // Custom validation functions without third-party libraries
 
 // Email validation
@@ -329,6 +331,137 @@ const validateKycRejection = (data) => {
   return errors;
 };
 
+// Payment validation functions
+const validatePaymentOrder = (data) => {
+  const errors = [];
+  
+  if (!data.investmentId) {
+    errors.push('Investment ID is required');
+  }
+  
+  if (!data.amount || typeof data.amount !== 'number' || data.amount <= 0) {
+    errors.push('Amount must be a positive number');
+  }
+  
+  if (!data.paymentMethod || !['upi', 'net_banking', 'credit_card', 'debit_card', 'wallet'].includes(data.paymentMethod)) {
+    errors.push('Payment method must be one of: upi, net_banking, credit_card, debit_card, wallet');
+  }
+  
+  if (data.emiNumber && (typeof data.emiNumber !== 'number' || data.emiNumber < 1)) {
+    errors.push('EMI number must be a positive integer');
+  }
+  
+  return errors;
+};
+
+const validateCashPayment = (data) => {
+  const errors = [];
+  
+  if (!data.memberId) {
+    errors.push('Member ID is required');
+  }
+  
+  if (!data.investmentId) {
+    errors.push('Investment ID is required');
+  }
+  
+  if (!data.amount || typeof data.amount !== 'number' || data.amount <= 0) {
+    errors.push('Amount must be a positive number');
+  }
+  
+  if (!data.paymentFor || !['principal', 'emi', 'penalty', 'interest', 'full_investment'].includes(data.paymentFor)) {
+    errors.push('Payment type must be one of: principal, emi, penalty, interest, full_investment');
+  }
+  
+  if (data.emiNumber && (typeof data.emiNumber !== 'number' || data.emiNumber < 1)) {
+    errors.push('EMI number must be a positive integer');
+  }
+  
+  if (data.receiptNumber && (typeof data.receiptNumber !== 'string' || data.receiptNumber.trim().length === 0)) {
+    errors.push('Receipt number must be a non-empty string');
+  }
+  
+  if (data.remarks && (typeof data.remarks !== 'string' || data.remarks.trim().length === 0)) {
+    errors.push('Remarks must be a non-empty string');
+  }
+  
+  return errors;
+};
+
+const validatePaymentVerification = (data) => {
+  const errors = [];
+  
+  if (!data.verificationStatus || !['verified', 'rejected'].includes(data.verificationStatus)) {
+    errors.push('Verification status must be either verified or rejected');
+  }
+  
+  if (data.remarks && (typeof data.remarks !== 'string' || data.remarks.trim().length === 0)) {
+    errors.push('Remarks must be a non-empty string');
+  }
+  
+  return errors;
+};
+
+const validatePenaltyApplication = (data) => {
+  const errors = [];
+  
+  if (!data.penaltyAmount || typeof data.penaltyAmount !== 'number' || data.penaltyAmount < 0) {
+    errors.push('Penalty amount must be a non-negative number');
+  }
+  
+  if (data.penaltyRate && (typeof data.penaltyRate !== 'number' || data.penaltyRate < 0 || data.penaltyRate > 100)) {
+    errors.push('Penalty rate must be between 0 and 100');
+  }
+  
+  if (!data.reason || typeof data.reason !== 'string' || data.reason.trim().length === 0) {
+    errors.push('Reason is required and must be a non-empty string');
+  }
+  
+  return errors;
+};
+
+const validatePenaltyWaiver = (data) => {
+  const errors = [];
+  
+  if (!data.reason || typeof data.reason !== 'string' || data.reason.trim().length === 0) {
+    errors.push('Reason is required and must be a non-empty string');
+  }
+  
+  return errors;
+};
+
+const validateEMIReminder = (data) => {
+  const errors = [];
+  
+  if (!data.reminderType || !['due_date', 'overdue', 'penalty_applied', 'grace_period'].includes(data.reminderType)) {
+    errors.push('Reminder type must be one of: due_date, overdue, penalty_applied, grace_period');
+  }
+  
+  if (!data.reminderMethod || !['email', 'sms', 'push_notification', 'whatsapp'].includes(data.reminderMethod)) {
+    errors.push('Reminder method must be one of: email, sms, push_notification, whatsapp');
+  }
+  
+  if (data.message && (typeof data.message !== 'string' || data.message.trim().length === 0)) {
+    errors.push('Message must be a non-empty string');
+  }
+  
+  return errors;
+};
+
+const validatePaymentScreenshot = (data) => {
+  const errors = [];
+  
+  if (!data.screenshotType || !['payment_confirmation', 'bank_statement', 'upi_screenshot', 'receipt', 'other'].includes(data.screenshotType)) {
+    errors.push('Screenshot type must be one of: payment_confirmation, bank_statement, upi_screenshot, receipt, other');
+  }
+  
+  if (data.description && (typeof data.description !== 'string' || data.description.trim().length === 0)) {
+    errors.push('Description must be a non-empty string');
+  }
+  
+  return errors;
+};
+
 module.exports = {
   validate,
   sanitizeInput,
@@ -341,5 +474,317 @@ module.exports = {
   validateStudentKyc,
   validateSocietyMemberKyc,
   validateKycApproval,
-  validateKycRejection
+  validateKycRejection,
+  validatePaymentOrder,
+  validateCashPayment,
+  validatePaymentVerification,
+  validatePenaltyApplication,
+  validatePenaltyWaiver,
+  validateEMIReminder,
+  validatePaymentScreenshot
+};
+
+// Loan Request Validations
+const validateLoanRequest = [
+  body('loanAmount')
+    .isNumeric()
+    .withMessage('Loan amount must be a number')
+    .isFloat({ min: 1000, max: 1000000 })
+    .withMessage('Loan amount must be between ₹1,000 and ₹10,00,000'),
+  
+  body('loanPurpose')
+    .isIn(['Personal', 'Business', 'Education', 'Medical', 'Home', 'Vehicle', 'Other'])
+    .withMessage('Invalid loan purpose'),
+  
+  body('loanDescription')
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Loan description must be between 10 and 500 characters'),
+  
+  body('tenureMonths')
+    .isInt({ min: 3, max: 60 })
+    .withMessage('Tenure must be between 3 and 60 months'),
+  
+  body('emiAmount')
+    .isNumeric()
+    .withMessage('EMI amount must be a number')
+    .isFloat({ min: 100 })
+    .withMessage('EMI amount must be at least ₹100'),
+  
+  body('interestRate')
+    .isNumeric()
+    .withMessage('Interest rate must be a number')
+    .isFloat({ min: 0, max: 30 })
+    .withMessage('Interest rate must be between 0% and 30%')
+];
+
+const validateLoanRequestUpdate = [
+  body('loanAmount')
+    .optional()
+    .isNumeric()
+    .withMessage('Loan amount must be a number')
+    .isFloat({ min: 1000, max: 1000000 })
+    .withMessage('Loan amount must be between ₹1,000 and ₹10,00,000'),
+  
+  body('loanPurpose')
+    .optional()
+    .isIn(['Personal', 'Business', 'Education', 'Medical', 'Home', 'Vehicle', 'Other'])
+    .withMessage('Invalid loan purpose'),
+  
+  body('loanDescription')
+    .optional()
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Loan description must be between 10 and 500 characters'),
+  
+  body('tenureMonths')
+    .optional()
+    .isInt({ min: 3, max: 60 })
+    .withMessage('Tenure must be between 3 and 60 months'),
+  
+  body('emiAmount')
+    .optional()
+    .isNumeric()
+    .withMessage('EMI amount must be a number')
+    .isFloat({ min: 100 })
+    .withMessage('EMI amount must be at least ₹100'),
+  
+  body('interestRate')
+    .optional()
+    .isNumeric()
+    .withMessage('Interest rate must be a number')
+    .isFloat({ min: 0, max: 30 })
+    .withMessage('Interest rate must be between 0% and 30%')
+];
+
+const validateLoanApproval = [
+  body('approvalNotes')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Approval notes cannot exceed 500 characters')
+];
+
+const validateLoanRejection = [
+  body('rejectionReason')
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Rejection reason must be between 10 and 500 characters')
+];
+
+const validateLoanDisbursement = [
+  body('disbursedAmount')
+    .isNumeric()
+    .withMessage('Disbursed amount must be a number')
+    .isFloat({ min: 1000 })
+    .withMessage('Disbursed amount must be at least ₹1,000'),
+  
+  body('disbursementMethod')
+    .isIn(['bank_transfer', 'cash', 'cheque'])
+    .withMessage('Invalid disbursement method'),
+  
+  body('disbursementReference')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Disbursement reference cannot exceed 100 characters')
+];
+
+const validateRequestId = [
+  param('requestId')
+    .isLength({ min: 1 })
+    .withMessage('Request ID is required')
+    .matches(/^LOAN\d{7}$/)
+    .withMessage('Invalid request ID format')
+];
+
+const validateDocumentUpload = [
+  body('documentType')
+    .isIn(['identity_proof', 'address_proof', 'income_proof', 'bank_statement', 'other'])
+    .withMessage('Invalid document type'),
+  
+  body('documentName')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Document name cannot exceed 100 characters')
+];
+
+const validateMemberId = [
+  param('memberId')
+    .isMongoId()
+    .withMessage('Invalid member ID format')
+];
+
+// Chat Validations
+const validateChatCreation = [
+  body('subject')
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Subject must be between 5 and 200 characters'),
+  
+  body('chatType')
+    .optional()
+    .isIn(['member_to_admin', 'member_to_member', 'group', 'support'])
+    .withMessage('Invalid chat type'),
+  
+  body('category')
+    .optional()
+    .isIn(['general', 'loan_inquiry', 'payment_issue', 'technical_support', 'complaint', 'suggestion'])
+    .withMessage('Invalid category'),
+  
+  body('priority')
+    .optional()
+    .isIn(['low', 'medium', 'high', 'urgent'])
+    .withMessage('Invalid priority level'),
+  
+  body('participants')
+    .optional()
+    .isArray()
+    .withMessage('Participants must be an array')
+];
+
+const validateMessage = [
+  body('content')
+    .isLength({ min: 1, max: 1000 })
+    .withMessage('Message content must be between 1 and 1000 characters'),
+  
+  body('messageType')
+    .optional()
+    .isIn(['text', 'image', 'file', 'system', 'payment_link', 'emi_reminder'])
+    .withMessage('Invalid message type'),
+  
+  body('replyTo')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid reply message ID')
+];
+
+const validateChatId = [
+  param('chatId')
+    .isLength({ min: 1 })
+    .withMessage('Chat ID is required')
+    .matches(/^CHAT\d{7}$/)
+    .withMessage('Invalid chat ID format')
+];
+
+const validateMessageId = [
+  param('messageId')
+    .isLength({ min: 1 })
+    .withMessage('Message ID is required')
+    .matches(/^MSG\d{7}$/)
+    .withMessage('Invalid message ID format')
+];
+
+// Thumbnail Validations
+const validateThumbnailUpload = [
+  body('category')
+    .optional()
+    .isIn(['gallery', 'banner', 'slider', 'event', 'announcement', 'society_photo', 'other'])
+    .withMessage('Invalid category'),
+  
+  body('isPublic')
+    .optional()
+    .isBoolean()
+    .withMessage('isPublic must be a boolean'),
+  
+  body('isFeatured')
+    .optional()
+    .isBoolean()
+    .withMessage('isFeatured must be a boolean'),
+  
+  body('tags')
+    .optional()
+    .isString()
+    .withMessage('Tags must be a comma-separated string')
+];
+
+const validateThumbnailUpdate = [
+  body('title')
+    .optional()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Title must be between 1 and 100 characters'),
+  
+  body('description')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Description cannot exceed 500 characters'),
+  
+  body('category')
+    .optional()
+    .isIn(['gallery', 'banner', 'slider', 'event', 'announcement', 'society_photo', 'other'])
+    .withMessage('Invalid category'),
+  
+  body('status')
+    .optional()
+    .isIn(['active', 'inactive', 'archived'])
+    .withMessage('Invalid status'),
+  
+  body('isPublic')
+    .optional()
+    .isBoolean()
+    .withMessage('isPublic must be a boolean'),
+  
+  body('isFeatured')
+    .optional()
+    .isBoolean()
+    .withMessage('isFeatured must be a boolean'),
+  
+  body('altText')
+    .optional()
+    .isLength({ max: 200 })
+    .withMessage('Alt text cannot exceed 200 characters'),
+  
+  body('tags')
+    .optional()
+    .isArray()
+    .withMessage('Tags must be an array'),
+  
+  body('tags.*')
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage('Each tag cannot exceed 50 characters')
+];
+
+const validateThumbnailId = [
+  param('thumbnailId')
+    .isLength({ min: 1 })
+    .withMessage('Thumbnail ID is required')
+    .matches(/^THUMB\d{7}$/)
+    .withMessage('Invalid thumbnail ID format')
+];
+
+const validateDisplayOrder = [
+  body('displayOrder')
+    .isInt({ min: 0 })
+    .withMessage('Display order must be a non-negative integer')
+];
+
+const validateBulkDelete = [
+  body('thumbnailIds')
+    .isArray({ min: 1 })
+    .withMessage('Thumbnail IDs must be a non-empty array'),
+  
+  body('thumbnailIds.*')
+    .matches(/^THUMB\d{7}$/)
+    .withMessage('Invalid thumbnail ID format')
+];
+
+// Export loan validation functions
+module.exports = {
+  ...module.exports,
+  validateLoanRequest,
+  validateLoanRequestUpdate,
+  validateLoanApproval,
+  validateLoanRejection,
+  validateLoanDisbursement,
+  validateRequestId,
+  validateDocumentUpload,
+  validateMemberId,
+  
+  // Chat Validations
+  validateChatCreation,
+  validateMessage,
+  validateChatId,
+  validateMessageId,
+  
+  // Thumbnail Validations
+  validateThumbnailUpload,
+  validateThumbnailUpdate,
+  validateThumbnailId,
+  validateDisplayOrder,
+  validateBulkDelete
 };

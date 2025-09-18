@@ -29,6 +29,16 @@ const adminInvestmentApprovalRouter = require('./routes/adminInvestmentApproval'
 const adminSocietyMemberInvestmentRouter = require('./routes/adminSocietyMemberInvestment');
 const adminStudentDocumentRouter = require('./routes/adminStudentDocument');
 const studentDocumentRouter = require('./routes/studentDocument');
+const societyMemberPaymentRouter = require('./routes/societyMemberPayment');
+const adminPaymentRouter = require('./routes/adminPayment');
+const emiTrackingRouter = require('./routes/emiTracking');
+const loanRequestRouter = require('./routes/loanRequest');
+const adminLoanRouter = require('./routes/adminLoan');
+const societyMemberDashboardRouter = require('./routes/societyMemberDashboard');
+const chatRouter = require('./routes/chat');
+const societyMemberProfileRouter = require('./routes/societyMemberProfile');
+const adminThumbnailRouter = require('./routes/adminThumbnail');
+const thumbnailRouter = require('./routes/thumbnail');
 
 // Import middleware
 const { securityHeaders, corsOptions, requestLogger, errorHandler, notFoundHandler } = require('./middleware/security');
@@ -78,6 +88,16 @@ app.use('/api/admin/investment-approval', adminInvestmentApprovalRouter);
 app.use('/api/admin/society-member-investment', adminSocietyMemberInvestmentRouter);
 app.use('/api/admin/student-documents', adminStudentDocumentRouter);
 app.use('/api/student/documents', studentDocumentRouter);
+app.use('/api/society-member-payments', societyMemberPaymentRouter);
+app.use('/api/admin/payments', adminPaymentRouter);
+app.use('/api/admin/emi-tracking', emiTrackingRouter);
+app.use('/api/loan-requests', loanRequestRouter);
+app.use('/api/admin/loans', adminLoanRouter);
+app.use('/api/society-member/dashboard', societyMemberDashboardRouter);
+app.use('/api/society-member/chat', chatRouter);
+app.use('/api/society-member/profile', societyMemberProfileRouter);
+app.use('/api/admin/thumbnails', adminThumbnailRouter);
+app.use('/api/thumbnails', thumbnailRouter);
 
 // Error handling middleware
 app.use(notFoundHandler);

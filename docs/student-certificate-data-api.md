@@ -123,7 +123,7 @@ curl -X GET "http://localhost:3500/api/admin/student-documents/students/68c69e05
 **Detailed Information (when includeDetails=true):**
 ```json
 {
-  "certificates": [
+  "certificates": [ 
     {
       // ... basic certificate information ...
       "description": "Successfully completed the course with excellent performance",

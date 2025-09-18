@@ -568,13 +568,13 @@ GET /api/admin/student-documents/students/:studentId/certificates
 GET /api/student/documents/marksheets
 ```
 
-**Query Parameters:**
+<!-- **Query Parameters:**
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 10)
 - `academicYear` (optional): Filter by academic year
 - `semester` (optional): Filter by semester
 - `examinationType` (optional): Filter by examination type
-- `result` (optional): Filter by result (PASS, FAIL)
+- `result` (optional): Filter by result (PASS, FAIL) -->
 
 **Response:**
 ```json

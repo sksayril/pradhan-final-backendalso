@@ -46,6 +46,7 @@ const uploadToS3 = async (file, key, contentType) => {
     });
 
     const result = await s3.upload(uploadParams).promise();
+    console.log('S3 upload successful:', result.Location);
     return result.Location; // Return the public URL
   } catch (error) {
     console.error('S3 upload error:', error);
