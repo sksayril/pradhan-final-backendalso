@@ -113,9 +113,9 @@ studentSchema.pre('save', async function(next) {
       let isUnique = false;
       
       while (!isUnique) {
-        // Generate student ID: STU + 6 random digits
+        // Generate student ID: PETF + 6 random digits
         const randomDigits = Math.floor(100000 + Math.random() * 900000);
-        studentId = `STU${randomDigits}`;
+        studentId = `PETF${randomDigits}`;
         
         // Check if this ID already exists
         const existingStudent = await this.constructor.findOne({ studentId });
