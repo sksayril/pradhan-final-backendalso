@@ -153,8 +153,19 @@ const validateStudentSignup = (data) => {
 const validateStudentLogin = (data) => {
   const errors = [];
   
-  if (!data.email || !isValidEmail(data.email)) {
+  // Check if either email or studentId is provided
+  if (!data.email && !data.studentId) {
+    errors.push('Please provide either email or student ID');
+  }
+  
+  // If email is provided, validate it
+  if (data.email && !isValidEmail(data.email)) {
     errors.push('Please provide a valid email address');
+  }
+  
+  // If studentId is provided, validate it
+  if (data.studentId && (typeof data.studentId !== 'string' || data.studentId.trim().length === 0)) {
+    errors.push('Please provide a valid student ID');
   }
   
   if (!data.password) {
@@ -216,8 +227,19 @@ const validateSocietyMemberSignup = (data) => {
 const validateSocietyMemberLogin = (data) => {
   const errors = [];
   
-  if (!data.email || !isValidEmail(data.email)) {
+  // Check if either email or memberId is provided
+  if (!data.email && !data.memberId) {
+    errors.push('Please provide either email or member ID');
+  }
+  
+  // If email is provided, validate it
+  if (data.email && !isValidEmail(data.email)) {
     errors.push('Please provide a valid email address');
+  }
+  
+  // If memberId is provided, validate it
+  if (data.memberId && (typeof data.memberId !== 'string' || data.memberId.trim().length === 0)) {
+    errors.push('Please provide a valid member ID');
   }
   
   if (!data.password) {

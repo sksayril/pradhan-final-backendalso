@@ -17,7 +17,7 @@ router.get('/', function(req, res, next) {
       },
       student: {
         signup: 'POST /api/student/signup',
-        login: 'POST /api/student/login',
+        login: 'POST /api/student/login (supports both email/password and studentId/password)',
         profile: 'GET /api/student/profile',
         dashboard: 'GET /api/student/dashboard',
         societies: 'GET /api/student/societies',
@@ -25,7 +25,7 @@ router.get('/', function(req, res, next) {
       },
       societyMember: {
         signup: 'POST /api/society-member/signup',
-        login: 'POST /api/society-member/login',
+        login: 'POST /api/society-member/login (supports both email/password and memberId/password)',
         profile: 'GET /api/society-member/profile',
         dashboard: 'GET /api/society-member/dashboard',
         events: 'GET /api/society-member/events',

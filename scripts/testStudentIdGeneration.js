@@ -104,3 +104,4 @@ const testStudentIdGeneration = async () => {
 
 // Run the test
 testStudentIdGeneration();
+

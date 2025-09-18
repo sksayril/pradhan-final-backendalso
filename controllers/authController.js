@@ -223,14 +223,36 @@ const studentSignup = async (req, res) => {
 
 const studentLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, studentId, password } = req.body;
     
-    // Find student with password
-    const student = await Student.findOne({ email }).select('+password');
+    // Validate that either email or studentId is provided
+    if (!email && !studentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide either email or student ID'
+      });
+    }
+    
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required'
+      });
+    }
+    
+    let student;
+    
+    // Find student by email or studentId
+    if (email) {
+      student = await Student.findOne({ email }).select('+password');
+    } else if (studentId) {
+      student = await Student.findOne({ studentId: studentId.toUpperCase() }).select('+password');
+    }
+    
     if (!student) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
     
@@ -247,7 +269,7 @@ const studentLogin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
     
@@ -381,14 +403,36 @@ const societyMemberSignup = async (req, res) => {
 
 const societyMemberLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, memberId, password } = req.body;
     
-    // Find society member with password
-    const member = await SocietyMember.findOne({ email }).select('+password');
+    // Validate that either email or memberId is provided
+    if (!email && !memberId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide either email or member ID'
+      });
+    }
+    
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required'
+      });
+    }
+    
+    let member;
+    
+    // Find society member by email or memberId
+    if (email) {
+      member = await SocietyMember.findOne({ email }).select('+password');
+    } else if (memberId) {
+      member = await SocietyMember.findOne({ memberId: memberId.toUpperCase() }).select('+password');
+    }
+    
     if (!member) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
     
@@ -405,7 +449,7 @@ const societyMemberLogin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
     
