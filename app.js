@@ -39,6 +39,8 @@ const chatRouter = require('./routes/chat');
 const societyMemberProfileRouter = require('./routes/societyMemberProfile');
 const adminThumbnailRouter = require('./routes/adminThumbnail');
 const thumbnailRouter = require('./routes/thumbnail');
+const cdInvestmentRouter = require('./routes/cdInvestment');
+const adminCDInvestmentRouter = require('./routes/adminCDInvestment');
 
 // Import middleware
 const { securityHeaders, corsOptions, requestLogger, errorHandler, notFoundHandler } = require('./middleware/security');
@@ -98,6 +100,8 @@ app.use('/api/society-member/chat', chatRouter);
 app.use('/api/society-member/profile', societyMemberProfileRouter);
 app.use('/api/admin/thumbnails', adminThumbnailRouter);
 app.use('/api/thumbnails', thumbnailRouter);
+app.use('/api/cd-investment', cdInvestmentRouter);
+app.use('/api/admin/cd-investment', adminCDInvestmentRouter);
 
 // Error handling middleware
 app.use(notFoundHandler);

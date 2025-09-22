@@ -785,6 +785,61 @@ const validateBulkDelete = [
     .withMessage('Invalid thumbnail ID format')
 ];
 
+// CD Investment validation functions
+const validateCDInvestmentRequest = (data) => {
+  const errors = [];
+  
+  if (!data.investmentAmount || typeof data.investmentAmount !== 'number') {
+    errors.push('Investment amount is required and must be a number');
+  } else if (data.investmentAmount < 1000) {
+    errors.push('Minimum investment amount is ₹1,000');
+  } else if (data.investmentAmount > 1000000) {
+    errors.push('Maximum investment amount is ₹10,00,000');
+  }
+  
+  if (!data.tenureMonths || typeof data.tenureMonths !== 'number') {
+    errors.push('Tenure is required and must be a number');
+  } else if (![6, 12, 18, 24, 36, 48, 60].includes(data.tenureMonths)) {
+    errors.push('Tenure must be one of: 6, 12, 18, 24, 36, 48, 60 months');
+  }
+  
+  if (data.purpose && (typeof data.purpose !== 'string' || data.purpose.trim().length > 200)) {
+    errors.push('Purpose cannot exceed 200 characters');
+  }
+  
+  if (data.notes && (typeof data.notes !== 'string' || data.notes.trim().length > 500)) {
+    errors.push('Notes cannot exceed 500 characters');
+  }
+  
+  return errors;
+};
+
+const validateCDApproval = (data) => {
+  const errors = [];
+  
+  if (data.adminNotes && (typeof data.adminNotes !== 'string' || data.adminNotes.trim().length > 500)) {
+    errors.push('Admin notes cannot exceed 500 characters');
+  }
+  
+  return errors;
+};
+
+const validateCDRejection = (data) => {
+  const errors = [];
+  
+  if (!data.rejectionReason || typeof data.rejectionReason !== 'string' || data.rejectionReason.trim().length < 10) {
+    errors.push('Rejection reason is required and must be at least 10 characters long');
+  } else if (data.rejectionReason.trim().length > 500) {
+    errors.push('Rejection reason cannot exceed 500 characters');
+  }
+  
+  if (data.adminNotes && (typeof data.adminNotes !== 'string' || data.adminNotes.trim().length > 500)) {
+    errors.push('Admin notes cannot exceed 500 characters');
+  }
+  
+  return errors;
+};
+
 // Export loan validation functions
 module.exports = {
   ...module.exports,
@@ -808,5 +863,10 @@ module.exports = {
   validateThumbnailUpdate,
   validateThumbnailId,
   validateDisplayOrder,
-  validateBulkDelete
+  validateBulkDelete,
+  
+  // CD Investment Validations
+  validateCDInvestmentRequest,
+  validateCDApproval,
+  validateCDRejection
 };

@@ -224,6 +224,23 @@ router.get('/', function(req, res, next) {
         getMyDocumentSummary: 'GET /api/student/documents/summary',
         verifyMarksheetPublic: 'GET /api/student/documents/public/verify/marksheet/:verificationCode',
         verifyCertificatePublic: 'GET /api/student/documents/public/verify/certificate/:verificationCode'
+      },
+      cdInvestment: {
+        getInvestmentInfo: 'GET /api/cd-investment/info (get CD options and user capacity)',
+        requestInvestment: 'POST /api/cd-investment/request (request new CD investment)',
+        getMyInvestments: 'GET /api/cd-investment/my-investments (get user CD investments)',
+        getInvestmentDetails: 'GET /api/cd-investment/:cdId (get specific CD details)'
+      },
+      adminCDInvestment: {
+        getPendingRequests: 'GET /api/admin/cd-investment/pending-requests (get all pending CD requests)',
+        getAllInvestments: 'GET /api/admin/cd-investment/all-investments (get all CD investments with filtering)',
+        getInvestmentDetails: 'GET /api/admin/cd-investment/:cdId (get CD details - admin view)',
+        approveRequest: 'PATCH /api/admin/cd-investment/:cdId/approve (approve CD request)',
+        rejectRequest: 'PATCH /api/admin/cd-investment/:cdId/reject (reject CD request)'
+      },
+      adminDashboard: {
+        getDashboard: 'GET /api/admin/dashboard (comprehensive admin dashboard with all statistics, charts, and data)',
+        getQuickStats: 'GET /api/admin/dashboard/quick-stats (quick statistics for dashboard widgets)'
       }
     },
     documentation: {
