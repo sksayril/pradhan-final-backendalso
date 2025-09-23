@@ -50,7 +50,7 @@ const app = express();
 
 // Security middleware
 app.use(securityHeaders);
-app.use(cors());
+app.use(cors({ origin: '*', credentials: true }));
 
 // Logging middleware
 app.use(requestLogger);
