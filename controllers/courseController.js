@@ -4,6 +4,7 @@ const { uploadFileToS3, deleteFileFromS3 } = require('../middleware/fileUpload')
 
 // Create a new course
 const createCourse = async (req, res) => {
+  let thumbnailUploadResult;
   try {
     console.log('Course creation request received:', {
       body: req.body,
