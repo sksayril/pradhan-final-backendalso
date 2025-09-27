@@ -20,15 +20,16 @@ The system supports two types of courses:
 
 1. **Online Courses**:
    - Require course thumbnail (image)
-   - Require course PDF material
+   - Optional course PDF material
    - Optional video URL
    - No venue or max students limit
 
 2. **Offline Courses**:
    - Require course thumbnail (image)
-   - Require venue and address
-   - Require maximum students limit
-   - No PDF or video requirements
+   - Optional course PDF material
+   - Optional venue and address
+   - Optional maximum students limit
+   - No video URL requirements
 
 ### 1. Create Course
 
@@ -56,10 +57,11 @@ Content-Type: multipart/form-data
 - `thumbnail` (file): Course thumbnail image
 
 **Online Course Additional Fields:**
-- `coursePdf` (file): Course PDF material
+- `coursePdf` (file, optional): Course PDF material
 - `videoUrl` (string, optional): Video URL
 
-**Offline Course Additional Fields:**
+**Offline Course Additional Fields (Optional):**
+- `coursePdf` (file, optional): Course PDF material
 - `venue` (string): Course venue
 - `address.street` (string): Street address
 - `address.city` (string): City

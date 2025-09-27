@@ -16,7 +16,7 @@ router.get('/', function(req, res, next) {
         logout: 'POST /api/admin/logout'
       },
       student: {
-        signup: 'POST /api/student/signup',
+        signup: 'POST /api/student/signup (multipart/form-data with profile picture upload to AWS S3)',
         login: 'POST /api/student/login (supports both email/password and studentId/password)',
         profile: 'GET /api/student/profile',
         dashboard: 'GET /api/student/dashboard',

@@ -164,30 +164,32 @@ Authorization: Bearer <token>
 
 ### POST /api/student/signup
 
-Create a new student account.
+Create a new student account with profile picture upload to AWS S3.
 
-**Request Body:**
-```json
-{
-  "email": "student@example.com",
-  "password": "Student123",
-  "firstName": "Jane",
-  "lastName": "Smith",
-  "department": "Computer Science",
-  "year": "3rd",
-  "phoneNumber": "+1234567890",
-  "dateOfBirth": "2000-01-01",
-  "address": {
-    "street": "123 Main St",
-    "city": "New York",
-    "state": "NY",
-    "zipCode": "10001",
-    "country": "USA"
-  },
-  "profilePicture": "https://example.com/profile.jpg",
-  "interests": ["Programming", "Web Development"]
-}
+**Content-Type:** `multipart/form-data`
+
+**Request Body (Form Data):**
 ```
+email: "student@example.com"
+password: "Student123"
+firstName: "Jane"
+lastName: "Smith"
+department: "Computer Science"
+year: "3rd"
+phoneNumber: "+1234567890"
+dateOfBirth: "2000-01-01"
+address: {"street": "123 Main St", "city": "New York", "state": "NY", "zipCode": "10001", "country": "USA"}
+interests: ["Programming", "Web Development"]
+profilePicture: [FILE] (optional - JPG, JPEG, PNG, max 10MB)
+```
+
+**Profile Picture Upload:**
+- **Field Name:** `profilePicture`
+- **File Types:** JPG, JPEG, PNG only
+- **Maximum Size:** 10MB
+- **Storage Location:** AWS S3 under `students/` folder
+- **Access:** Public URL returned in response
+- **Image Processing:** Automatic compression and optimization
 
 **Note:** Student ID is automatically generated in format `STU123456` (STU + 6 random digits) and will be unique.
 
@@ -202,15 +204,53 @@ Create a new student account.
       "email": "student@example.com",
       "firstName": "Jane",
       "lastName": "Smith",
-      "studentId": "STU001",
+      "studentId": "PETF123456",
       "department": "Computer Science",
       "year": "3rd",
+      "profilePicture": "https://s3.amazonaws.com/bucket/students/compressed_profile_image.jpg",
       "isActive": true,
       "isVerified": false
     },
     "token": "jwt-token"
   }
 }
+```
+
+**Error Responses:**
+```json
+// File size too large
+{
+  "success": false,
+  "message": "File size too large. Maximum size is 10MB for profile pictures."
+}
+
+// Invalid file type
+{
+  "success": false,
+  "message": "Only JPG, JPEG, and PNG files are allowed for profile pictures."
+}
+
+// Upload error
+{
+  "success": false,
+  "message": "Error uploading profile picture. Please try again."
+}
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:3000/api/student/signup \
+  -F "email=student@example.com" \
+  -F "password=Student123" \
+  -F "firstName=Jane" \
+  -F "lastName=Smith" \
+  -F "department=Computer Science" \
+  -F "year=3rd" \
+  -F "phoneNumber=+1234567890" \
+  -F "dateOfBirth=2000-01-01" \
+  -F 'address={"street":"123 Main St","city":"New York","state":"NY","zipCode":"10001","country":"USA"}' \
+  -F 'interests=["Programming","Web Development"]' \
+  -F "profilePicture=@/path/to/profile-image.jpg"
 ```
 
 ### POST /api/student/login

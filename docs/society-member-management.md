@@ -48,32 +48,51 @@ Member IDs are automatically generated in the format: `YYYYMMXXX`
 
 #### POST /api/society-member/signup
 
-Register a new society member with auto-generated Member ID.
+Register a new society member with auto-generated Member ID and optional profile picture upload.
 
-**Request Body:**
+**Request Type:** `multipart/form-data`
+
+**Form Fields:**
+- `email` (string, required): Member's email address
+- `password` (string, required): Member's password
+- `firstName` (string, required): Member's first name
+- `lastName` (string, required): Member's last name
+- `societyName` (string, required): Name of the society
+- `position` (string, required): Member's position in the society
+- `department` (string, required): Member's department
+- `phoneNumber` (string, required): Member's phone number
+- `dateOfBirth` (string, required): Member's date of birth (YYYY-MM-DD format)
+- `address` (string, required): JSON string of address object
+- `skills` (string, optional): JSON string of skills array
+- `responsibilities` (string, optional): JSON string of responsibilities array
+- `profilePicture` (file, optional): Profile picture file (JPG, JPEG, PNG only, max 10MB)
+
+**Address Object Format:**
 ```json
 {
-  "email": "member@example.com",
-  "password": "Member123",
-  "firstName": "John",
-  "lastName": "Doe",
-  "societyName": "Tech Society",
-  "position": "President",
-  "department": "Computer Science",
-  "phoneNumber": "+1234567890",
-  "dateOfBirth": "1999-01-01",
-  "address": {
-    "street": "123 Main St",
-    "city": "New York",
-    "state": "NY",
-    "zipCode": "10001",
-    "country": "USA"
-  },
-  "profilePicture": "https://example.com/profile.jpg",
-  "skills": ["Leadership", "Event Management"],
-  "responsibilities": ["Organize events", "Manage members"]
+  "street": "123 Main St",
+  "city": "New York",
+  "state": "NY",
+  "zipCode": "10001",
+  "country": "USA"
 }
 ```
+
+**Skills Array Format:**
+```json
+["Leadership", "Event Management"]
+```
+
+**Responsibilities Array Format:**
+```json
+["Organize events", "Manage members"]
+```
+
+**Profile Picture Requirements:**
+- File types: JPG, JPEG, PNG only
+- Maximum size: 10MB
+- Stored in S3 bucket under `profile-images/` folder
+- Public S3 URL saved in `profilePicture` field
 
 **Required Fields:**
 - `email` - Valid email address
@@ -107,6 +126,7 @@ Register a new society member with auto-generated Member ID.
       "societyName": "Tech Society",
       "position": "President",
       "department": "Computer Science",
+      "profilePicture": "https://your-bucket.s3.amazonaws.com/profile-images/1234567890-abc123.jpg",
       "isActive": true,
       "isVerified": false,
       "kycStatus": "not_submitted",

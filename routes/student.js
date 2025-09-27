@@ -3,9 +3,10 @@ const router = express.Router();
 const { studentSignup, studentLogin, logout, getProfile } = require('../controllers/authController');
 const { validate, validateStudentSignup, validateStudentLogin } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
+const { uploadProfilePicture, handleUploadError } = require('../middleware/fileUpload');
 
 // Public routes
-router.post('/signup', validate(validateStudentSignup), studentSignup);
+router.post('/signup', uploadProfilePicture(), handleUploadError, validate(validateStudentSignup), studentSignup);
 router.post('/login', validate(validateStudentLogin), studentLogin);
 
 // Protected routes

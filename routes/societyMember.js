@@ -3,9 +3,10 @@ const router = express.Router();
 const { societyMemberSignup, societyMemberLogin, logout, getProfile } = require('../controllers/authController');
 const { validate, validateSocietyMemberSignup, validateSocietyMemberLogin } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
+const { uploadProfilePicture, handleUploadError } = require('../middleware/fileUpload');
 
 // Public routes
-router.post('/signup', validate(validateSocietyMemberSignup), societyMemberSignup);
+router.post('/signup', uploadProfilePicture(), handleUploadError, validate(validateSocietyMemberSignup), societyMemberSignup);
 router.post('/login', validate(validateSocietyMemberLogin), societyMemberLogin);
 
 // Protected routes

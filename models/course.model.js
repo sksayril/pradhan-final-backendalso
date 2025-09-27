@@ -75,9 +75,10 @@ const courseSchema = new mongoose.Schema({
   // Online course specific fields
   coursePdf: {
     type: String, // URL to S3 - only for online courses
-    required: function() {
-      return this.type === 'online';
-    }
+    // Note: coursePdf is now optional for online courses
+    // required: function() {
+    //   return this.type === 'online';
+    // }
   },
   videoUrl: {
     type: String, // For online courses - can be YouTube, Vimeo, or direct video URL
@@ -95,9 +96,10 @@ const courseSchema = new mongoose.Schema({
   // Offline course specific fields
   venue: {
     type: String,
-    required: function() {
-      return this.type === 'offline';
-    },
+    // Note: venue is now optional for offline courses
+    // required: function() {
+    //   return this.type === 'offline';
+    // },
     trim: true,
     maxlength: [200, 'Venue cannot exceed 200 characters']
   },
@@ -113,9 +115,10 @@ const courseSchema = new mongoose.Schema({
   },
   maxStudents: {
     type: Number,
-    required: function() {
-      return this.type === 'offline';
-    },
+    // Note: maxStudents is now optional for offline courses
+    // required: function() {
+    //   return this.type === 'offline';
+    // },
     min: [1, 'Maximum students must be at least 1']
   },
   // Course status and metadata

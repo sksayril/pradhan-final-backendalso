@@ -3,6 +3,7 @@ const Student = require('../models/student.model');
 const SocietyMember = require('../models/societyMember.model');
 const { generateToken } = require('../middleware/auth');
 const { generateMemberId } = require('../utilities/memberIdGenerator');
+const { uploadProfilePictureToS3, uploadStudentProfilePictureToS3 } = require('../middleware/fileUpload');
 
 // Admin Authentication
 const adminSignup = async (req, res) => {
@@ -150,7 +151,7 @@ const adminLogin = async (req, res) => {
 // Student Authentication
 const studentSignup = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, department, year, phoneNumber, dateOfBirth, address, profilePicture, interests } = req.body;
+    const { email, password, firstName, lastName, department, year, phoneNumber, dateOfBirth, address, interests } = req.body;
     
     // Check if student already exists
     const existingStudent = await Student.findOne({ email });
@@ -159,6 +160,23 @@ const studentSignup = async (req, res) => {
         success: false,
         message: 'Student with this email already exists'
       });
+    }
+    
+    let profilePictureUrl = null;
+    
+    // Handle profile picture upload if provided
+    if (req.file) {
+      try {
+        const uploadResult = await uploadStudentProfilePictureToS3(req.file);
+        profilePictureUrl = uploadResult.url;
+        console.log('Profile picture uploaded to S3:', profilePictureUrl);
+      } catch (uploadError) {
+        console.error('Error uploading profile picture:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error uploading profile picture. Please try again.'
+        });
+      }
     }
     
     // Create new student (studentId will be auto-generated)
@@ -173,7 +191,7 @@ const studentSignup = async (req, res) => {
       phoneNumber,
       dateOfBirth,
       address,
-      profilePicture,
+      profilePicture: profilePictureUrl,
       interests
     });
     
@@ -205,6 +223,7 @@ const studentSignup = async (req, res) => {
           studentId: student.studentId,
           department: student.department,
           year: student.year,
+          profilePicture: student.profilePicture,
           isActive: student.isActive,
           isVerified: student.isVerified
         },
@@ -324,7 +343,7 @@ const studentLogin = async (req, res) => {
 // Society Member Authentication
 const societyMemberSignup = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, societyName, position, department, phoneNumber, dateOfBirth, address, profilePicture, skills, responsibilities } = req.body;
+    const { email, password, firstName, lastName, societyName, position, department, phoneNumber, dateOfBirth, address, skills, responsibilities } = req.body;
     
     // Check if society member already exists by email
     const existingMember = await SocietyMember.findOne({ email });
@@ -337,6 +356,22 @@ const societyMemberSignup = async (req, res) => {
     
     // Generate unique member ID
     const memberId = await generateMemberId();
+    
+    // Handle profile picture upload if provided
+    let profilePictureUrl = null;
+    if (req.file) {
+      try {
+        const uploadResult = await uploadProfilePictureToS3(req.file);
+        profilePictureUrl = uploadResult.url;
+        console.log('Profile picture uploaded successfully:', profilePictureUrl);
+      } catch (uploadError) {
+        console.error('Profile picture upload failed:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload profile picture. Please try again.'
+        });
+      }
+    }
     
     // Create new society member
     const member = await SocietyMember.create({
@@ -352,7 +387,7 @@ const societyMemberSignup = async (req, res) => {
       phoneNumber,
       dateOfBirth,
       address,
-      profilePicture,
+      profilePicture: profilePictureUrl,
       skills,
       responsibilities
     });
@@ -385,8 +420,12 @@ const societyMemberSignup = async (req, res) => {
           memberId: member.memberId,
           societyName: member.societyName,
           position: member.position,
+          department: member.department,
+          profilePicture: member.profilePicture,
           isActive: member.isActive,
-          isVerified: member.isVerified
+          isVerified: member.isVerified,
+          kycStatus: member.kycStatus,
+          joiningDate: member.joiningDate
         },
         token
       }

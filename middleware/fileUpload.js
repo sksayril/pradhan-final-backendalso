@@ -15,6 +15,16 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// File filter for profile picture uploads (JPG, JPEG, PNG only)
+const profilePictureFilter = (req, file, cb) => {
+  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPG, JPEG, and PNG files are allowed for profile pictures'), false);
+  }
+};
+
 // Configure multer
 const upload = multer({
   storage: storage,
@@ -42,13 +52,24 @@ const uploadSocietyMemberKyc = () => {
   ]);
 };
 
+// Middleware for profile picture uploads (10MB limit, JPG/JPEG/PNG only)
+const uploadProfilePicture = () => {
+  return multer({
+    storage: storage,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: profilePictureFilter
+  }).single('profilePicture');
+};
+
 // Error handling middleware for multer
 const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File size too large. Maximum size is 5MB.'
+        message: 'File size too large. Maximum size is 10MB for profile pictures.'
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
@@ -69,6 +90,13 @@ const handleUploadError = (err, req, res, next) => {
     return res.status(400).json({
       success: false,
       message: 'Only image files are allowed.'
+    });
+  }
+  
+  if (err.message === 'Only JPG, JPEG, and PNG files are allowed for profile pictures') {
+    return res.status(400).json({
+      success: false,
+      message: 'Only JPG, JPEG, and PNG files are allowed for profile pictures.'
     });
   }
   
@@ -139,6 +167,62 @@ const uploadImageToS3 = async (file, prefix = 'images') => {
     return { url, key, originalSize: file.size, compressedSize: processedFile.size };
   } catch (error) {
     console.error('Error processing and uploading image to S3:', error);
+    throw error;
+  }
+};
+
+// Helper function to upload profile picture to S3
+const uploadProfilePictureToS3 = async (file) => {
+  try {
+    console.log('Processing profile picture for upload...');
+    
+    // Process and compress the image
+    const processedFile = await processImage(file);
+    
+    // Generate unique key for S3 with profile-images prefix
+    const key = generateFileKey(processedFile.originalname, 'profile-images');
+    
+    // Upload to S3
+    const url = await uploadToS3(processedFile, key, processedFile.mimetype);
+    
+    console.log('Profile picture uploaded successfully:', {
+      originalSize: file.size,
+      compressedSize: processedFile.size,
+      compressionRatio: ((file.size - processedFile.size) / file.size * 100).toFixed(2) + '%',
+      url: url
+    });
+    
+    return { url, key, originalSize: file.size, compressedSize: processedFile.size };
+  } catch (error) {
+    console.error('Error processing and uploading profile picture to S3:', error);
+    throw error;
+  }
+};
+
+// Helper function to upload student profile picture to S3 (under students/ folder)
+const uploadStudentProfilePictureToS3 = async (file) => {
+  try {
+    console.log('Processing student profile picture for upload...');
+    
+    // Process and compress the image
+    const processedFile = await processImage(file);
+    
+    // Generate unique key for S3 with students prefix
+    const key = generateFileKey(processedFile.originalname, 'students');
+    
+    // Upload to S3
+    const url = await uploadToS3(processedFile, key, processedFile.mimetype);
+    
+    console.log('Student profile picture uploaded successfully:', {
+      originalSize: file.size,
+      compressedSize: processedFile.size,
+      compressionRatio: ((file.size - processedFile.size) / file.size * 100).toFixed(2) + '%',
+      url: url
+    });
+    
+    return { url, key, originalSize: file.size, compressedSize: processedFile.size };
+  } catch (error) {
+    console.error('Error processing and uploading student profile picture to S3:', error);
     throw error;
   }
 };
@@ -272,10 +356,13 @@ module.exports = {
   uploadSingle,
   uploadMultiple,
   uploadSocietyMemberKyc,
+  uploadProfilePicture,
   handleUploadError,
   uploadFileToS3,
   uploadKycImageToS3,
   uploadImageToS3,
+  uploadProfilePictureToS3,
+  uploadStudentProfilePictureToS3,
   uploadMultipleKycImagesToS3,
   deleteFileFromS3,
   uploadCourseFiles,

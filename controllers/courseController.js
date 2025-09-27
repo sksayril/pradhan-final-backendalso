@@ -5,6 +5,7 @@ const { uploadFileToS3, deleteFileFromS3 } = require('../middleware/fileUpload')
 // Create a new course
 const createCourse = async (req, res) => {
   let thumbnailUploadResult;
+  let coursePdfUrl = null;
   try {
     console.log('Course creation request received:', {
       body: req.body,
@@ -48,19 +49,20 @@ const createCourse = async (req, res) => {
     }
 
     // Validate required fields based on course type
-    if (type === 'offline' && !venue) {
-      return res.status(400).json({
-        success: false,
-        message: 'Venue is required for offline courses'
-      });
-    }
+    // Note: venue and maxStudents are now optional for offline courses
+    // if (type === 'offline' && !venue) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Venue is required for offline courses'
+    //   });
+    // }
 
-    if (type === 'offline' && !maxStudents) {
-      return res.status(400).json({
-        success: false,
-        message: 'Maximum students is required for offline courses'
-      });
-    }
+    // if (type === 'offline' && !maxStudents) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Maximum students is required for offline courses'
+    //   });
+    // }
 
     // Check if thumbnail is uploaded
     if (!req.file && !req.files?.thumbnail) {
@@ -80,9 +82,8 @@ const createCourse = async (req, res) => {
       thumbnailUploadResult = await uploadFileToS3(req.files.thumbnail[0], 'course-thumbnails');
     }
     
-    // For online courses, check if PDF is uploaded (coursePdf or syllabus)
-    let coursePdfUrl = null;
-    if (type === 'online' && req.files) {
+    // For both online and offline courses, check if PDF is uploaded (coursePdf or syllabus)
+    if (req.files) {
       if (req.files.coursePdf) {
         const pdfUploadResult = await uploadFileToS3(req.files.coursePdf[0], 'course-materials');
         coursePdfUrl = pdfUploadResult.url;
@@ -120,9 +121,12 @@ const createCourse = async (req, res) => {
       courseData.coursePdf = coursePdfUrl;
       courseData.videoUrl = videoUrl;
     } else {
-      courseData.venue = venue;
-      courseData.address = address;
-      courseData.maxStudents = parseInt(maxStudents);
+      // For offline courses, venue and maxStudents are now optional
+      if (venue) courseData.venue = venue;
+      if (address) courseData.address = address;
+      if (maxStudents) courseData.maxStudents = parseInt(maxStudents);
+      // Allow PDF uploads for offline courses too
+      if (coursePdfUrl) courseData.coursePdf = coursePdfUrl;
     }
 
     const course = await Course.create(courseData);
@@ -678,19 +682,20 @@ const createSimpleCourse = async (req, res) => {
     }
 
     // Validate required fields based on course type
-    if (type === 'offline' && !venue) {
-      return res.status(400).json({
-        success: false,
-        message: 'Venue is required for offline courses'
-      });
-    }
+    // Note: venue and maxStudents are now optional for offline courses
+    // if (type === 'offline' && !venue) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Venue is required for offline courses'
+    //   });
+    // }
 
-    if (type === 'offline' && !maxStudents) {
-      return res.status(400).json({
-        success: false,
-        message: 'Maximum students is required for offline courses'
-      });
-    }
+    // if (type === 'offline' && !maxStudents) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Maximum students is required for offline courses'
+    //   });
+    // }
 
     // Create course data with placeholder thumbnail
     const courseData = {
@@ -719,9 +724,11 @@ const createSimpleCourse = async (req, res) => {
     if (type === 'online') {
       courseData.videoUrl = videoUrl;
     } else {
-      courseData.venue = venue;
-      courseData.address = address;
-      courseData.maxStudents = parseInt(maxStudents);
+      // For offline courses, venue and maxStudents are now optional
+      if (venue) courseData.venue = venue;
+      if (address) courseData.address = address;
+      if (maxStudents) courseData.maxStudents = parseInt(maxStudents);
+      // Note: Simple course creation doesn't handle file uploads, so no coursePdf here
     }
 
     const course = await Course.create(courseData);
