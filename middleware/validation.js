@@ -143,9 +143,8 @@ const validateStudentSignup = (data) => {
     errors.push('Date of birth must be in the past');
   }
   
-  if (data.profilePicture && !isValidURL(data.profilePicture)) {
-    errors.push('Please provide a valid URL for profile picture');
-  }
+  // Profile picture validation is handled by file upload middleware
+  // No need to validate URL here as it's uploaded as a file
   
   return errors;
 };
@@ -217,9 +216,8 @@ const validateSocietyMemberSignup = (data) => {
     errors.push('Date of birth must be in the past');
   }
   
-  if (data.profilePicture && !isValidURL(data.profilePicture)) {
-    errors.push('Please provide a valid URL for profile picture');
-  }
+  // Profile picture validation is handled by file upload middleware
+  // No need to validate URL here as it's uploaded as a file
   
   return errors;
 };

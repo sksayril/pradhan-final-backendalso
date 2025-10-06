@@ -3,7 +3,7 @@ const Student = require('../models/student.model');
 const SocietyMember = require('../models/societyMember.model');
 const { generateToken } = require('../middleware/auth');
 const { generateMemberId } = require('../utilities/memberIdGenerator');
-const { uploadProfilePictureToS3, uploadStudentProfilePictureToS3 } = require('../middleware/fileUpload');
+const { uploadStudentProfilePictureToS3, uploadProfilePictureToS3 } = require('../middleware/fileUpload');
 
 // Admin Authentication
 const adminSignup = async (req, res) => {

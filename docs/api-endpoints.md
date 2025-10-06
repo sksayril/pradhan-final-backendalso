@@ -388,31 +388,25 @@ Authorization: Bearer <token>
 
 ### POST /api/society-member/signup
 
-Create a new society member account.
+Create a new society member account with profile picture upload to AWS S3.
 
-**Request Body:**
-```json
-{
-  "email": "member@example.com",
-  "password": "Member123",
-  "firstName": "Bob",
-  "lastName": "Johnson",
-  "societyName": "Tech Society",
-  "position": "President",
-  "department": "Computer Science",
-  "phoneNumber": "+1234567890",
-  "dateOfBirth": "1999-01-01",
-  "address": {
-    "street": "456 Oak Ave",
-    "city": "Los Angeles",
-    "state": "CA",
-    "zipCode": "90210",
-    "country": "USA"
-  },
-  "profilePicture": "https://example.com/profile.jpg",
-  "skills": ["Leadership", "Event Management"],
-  "responsibilities": ["Organize events", "Manage members"]
-}
+**Content-Type:** `multipart/form-data`
+
+**Request Body (Form Data):**
+```
+email: "member@example.com"
+password: "Member123"
+firstName: "Bob"
+lastName: "Johnson"
+societyName: "Tech Society"
+position: "President"
+department: "Computer Science"
+phoneNumber: "+1234567890"
+dateOfBirth: "1999-01-01"
+address: {"street": "456 Oak Ave", "city": "Los Angeles", "state": "CA", "zipCode": "90210", "country": "USA"}
+skills: ["Leadership", "Event Management"]
+responsibilities: ["Organize events", "Manage members"]
+profilePicture: [FILE] (optional - JPG, JPEG, PNG, max 10MB)
 ```
 
 **Note:** Member ID is automatically generated in format `YYYYMMXXX` (e.g., 202511001, 202511002, etc.) and will be unique. The format includes:
@@ -434,6 +428,7 @@ Create a new society member account.
       "memberId": "202511001",
       "societyName": "Tech Society",
       "position": "President",
+      "profilePicture": "https://s3.amazonaws.com/bucket/profile-images/profile_789012.jpg",
       "isActive": true,
       "isVerified": false
     },
