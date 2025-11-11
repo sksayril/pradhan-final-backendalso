@@ -1,42 +1,33 @@
 const SocietyMember = require('../models/societyMember.model');
 
 /**
- * Generate a unique Member ID in the format: YYYYMMXXX
- * Where:
- * - YYYY: Current year (e.g., 2025)
- * - MM: Current month (e.g., 11 for November)
- * - XXX: Sequential number starting from 001
+ * Generate a unique Member ID in the format: 000000001
+ * Sequential format starting from 000000001
  * 
- * Example: 202511001, 202511002, 202511003, etc.
+ * Example: 000000001, 000000002, 000000003, etc.
  */
 const generateMemberId = async () => {
   try {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-    
-    // Create the prefix (YYYYMM)
-    const prefix = `${year}${month}`;
-    
-    // Find the highest existing member ID with this prefix
-    const existingMembers = await SocietyMember.find({
-      memberId: { $regex: `^${prefix}` }
-    }).sort({ memberId: -1 }).limit(1);
+    // Find the highest existing member ID
+    const existingMembers = await SocietyMember.find({})
+      .sort({ memberId: -1 })
+      .limit(1);
     
     let nextNumber = 1;
     
     if (existingMembers.length > 0) {
       // Extract the number part from the last member ID
       const lastMemberId = existingMembers[0].memberId;
-      const lastNumber = parseInt(lastMemberId.substring(6), 10); // Get last 3 digits
-      nextNumber = lastNumber + 1;
+      const lastNumber = parseInt(lastMemberId, 10);
+      
+      // If it's a valid number, increment it
+      if (!isNaN(lastNumber) && lastNumber > 0) {
+        nextNumber = lastNumber + 1;
+      }
     }
     
-    // Format the number with leading zeros (XXX)
-    const formattedNumber = String(nextNumber).padStart(3, '0');
-    
-    // Combine to create the final member ID
-    const memberId = `${prefix}${formattedNumber}`;
+    // Format the number with leading zeros (9 digits total)
+    const memberId = String(nextNumber).padStart(9, '0');
     
     // Double-check uniqueness (safety measure)
     const existingMember = await SocietyMember.findOne({ memberId });
@@ -59,25 +50,23 @@ const generateMemberId = async () => {
  * @returns {boolean} - True if valid format, false otherwise
  */
 const validateMemberIdFormat = (memberId) => {
-  const pattern = /^\d{4}\d{2}\d{3}$/; // YYYYMMXXX format
+  const pattern = /^\d{9}$/; // 9 digits format: 000000001
   return pattern.test(memberId);
 };
 
 /**
- * Extract year and month from member ID
+ * Parse member ID to get the sequence number
  * @param {string} memberId - The member ID
- * @returns {object} - Object with year and month
+ * @returns {object} - Object with sequence number
  */
 const parseMemberId = (memberId) => {
   if (!validateMemberIdFormat(memberId)) {
     throw new Error('Invalid member ID format');
   }
   
-  const year = parseInt(memberId.substring(0, 4), 10);
-  const month = parseInt(memberId.substring(4, 6), 10);
-  const sequence = parseInt(memberId.substring(6, 9), 10);
+  const sequence = parseInt(memberId, 10);
   
-  return { year, month, sequence };
+  return { sequence };
 };
 
 module.exports = {

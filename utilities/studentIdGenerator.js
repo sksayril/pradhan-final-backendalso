@@ -1,36 +1,47 @@
 const Student = require('../models/student.model');
 
 /**
- * Generate a unique Student ID in the format: PETFXXXXXX
- * Where:
- * - PETF: Fixed prefix for student IDs
- * - XXXXXX: 6-digit random number (100000-999999)
+ * Generate a unique Student ID in the format: PETF000001
+ * Sequential format starting from PETF000001
  * 
- * Example: PETF123456, PETF789012, PETF345678, etc.
+ * Example: PETF000001, PETF000002, PETF000003, etc.
  */
 const generateStudentId = async () => {
   try {
-    let studentId;
-    let isUnique = false;
-    let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loops
+    // Find the highest existing student ID
+    const existingStudents = await Student.find({})
+      .sort({ studentId: -1 })
+      .limit(1);
     
-    while (!isUnique && attempts < maxAttempts) {
-      // Generate student ID: PETF + 6 random digits
-      const randomDigits = Math.floor(100000 + Math.random() * 900000);
-      studentId = `PETF${randomDigits}`;
+    let nextNumber = 1;
+    
+    if (existingStudents.length > 0) {
+      // Extract the number part from the last student ID
+      const lastStudentId = existingStudents[0].studentId;
       
-      // Check if this ID already exists
-      const existingStudent = await Student.findOne({ studentId });
-      if (!existingStudent) {
-        isUnique = true;
+      // Check if it matches PETF format
+      if (lastStudentId && lastStudentId.startsWith('PETF')) {
+        const numberPart = lastStudentId.substring(4); // Get digits after "PETF"
+        const lastNumber = parseInt(numberPart, 10);
+        
+        // If it's a valid number, increment it
+        if (!isNaN(lastNumber) && lastNumber > 0) {
+          nextNumber = lastNumber + 1;
+        }
       }
-      
-      attempts++;
     }
     
-    if (!isUnique) {
-      throw new Error('Unable to generate unique student ID after maximum attempts');
+    // Format the number with leading zeros (6 digits total)
+    const formattedNumber = String(nextNumber).padStart(6, '0');
+    
+    // Combine to create the final student ID
+    const studentId = `PETF${formattedNumber}`;
+    
+    // Double-check uniqueness (safety measure)
+    const existingStudent = await Student.findOne({ studentId });
+    if (existingStudent) {
+      // If somehow a duplicate exists, try again with incremented number
+      return await generateStudentId();
     }
     
     return studentId;
@@ -101,13 +112,9 @@ const generateSequentialStudentId = async () => {
  * @returns {boolean} - True if valid format, false otherwise
  */
 const validateStudentIdFormat = (studentId) => {
-  // Check for random format: PETF + 6 digits
-  const randomPattern = /^PETF\d{6}$/;
-  
-  // Check for sequential format: PETF + YYYY + MM + XXX
-  const sequentialPattern = /^PETF\d{4}\d{2}\d{3}$/;
-  
-  return randomPattern.test(studentId) || sequentialPattern.test(studentId);
+  // Check for sequential format: PETF + 6 digits (e.g., PETF000001)
+  const pattern = /^PETF\d{6}$/;
+  return pattern.test(studentId);
 };
 
 /**
@@ -120,29 +127,15 @@ const parseStudentId = (studentId) => {
     throw new Error('Invalid student ID format');
   }
   
-  // Check if it's random format (PETF + 6 digits)
-  const randomPattern = /^PETF(\d{6})$/;
-  const randomMatch = studentId.match(randomPattern);
+  // Extract the number part from PETF format (PETF + 6 digits)
+  const pattern = /^PETF(\d{6})$/;
+  const match = studentId.match(pattern);
   
-  if (randomMatch) {
-    return {
-      type: 'random',
-      prefix: 'PETF',
-      randomDigits: randomMatch[1]
-    };
-  }
-  
-  // Check if it's sequential format (PETF + YYYY + MM + XXX)
-  const sequentialPattern = /^PETF(\d{4})(\d{2})(\d{3})$/;
-  const sequentialMatch = studentId.match(sequentialPattern);
-  
-  if (sequentialMatch) {
+  if (match) {
     return {
       type: 'sequential',
       prefix: 'PETF',
-      year: parseInt(sequentialMatch[1], 10),
-      month: parseInt(sequentialMatch[2], 10),
-      sequence: parseInt(sequentialMatch[3], 10)
+      sequence: parseInt(match[1], 10)
     };
   }
   
@@ -157,13 +150,9 @@ const getStudentIdStats = async () => {
   try {
     const totalStudents = await Student.countDocuments();
     
-    // Count by type
-    const randomCount = await Student.countDocuments({
+    // Count students with PETF format (PETF + 6 digits)
+    const petfFormatCount = await Student.countDocuments({
       studentId: { $regex: /^PETF\d{6}$/ }
-    });
-    
-    const sequentialCount = await Student.countDocuments({
-      studentId: { $regex: /^PETF\d{4}\d{2}\d{3}$/ }
     });
     
     // Get latest student ID
@@ -171,8 +160,7 @@ const getStudentIdStats = async () => {
     
     return {
       totalStudents,
-      randomFormat: randomCount,
-      sequentialFormat: sequentialCount,
+      petfFormatCount: petfFormatCount,
       latestStudentId: latestStudent ? latestStudent.studentId : null,
       latestStudentName: latestStudent ? `${latestStudent.firstName} ${latestStudent.lastName}` : null
     };

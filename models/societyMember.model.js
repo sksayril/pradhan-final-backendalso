@@ -36,13 +36,12 @@ const societyMemberSchema = new mongoose.Schema({
     required: [true, 'Member ID is required'],
     unique: true,
     trim: true,
-    uppercase: true,
     validate: {
       validator: function(v) {
-        // Validate format: YYYYMMXXX (e.g., 202511001)
-        return /^\d{4}\d{2}\d{3}$/.test(v);
+        // Validate format: 000000001 (9 digits)
+        return /^\d{9}$/.test(v);
       },
-      message: 'Member ID must be in format YYYYMMXXX (e.g., 202511001)'
+      message: 'Member ID must be in format 000000001 (9 digits)'
     }
   },
   societyName: {

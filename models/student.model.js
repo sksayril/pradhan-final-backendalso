@@ -109,22 +109,8 @@ studentSchema.index({ year: 1 });
 studentSchema.pre('save', async function(next) {
   if (this.isNew && !this.studentId) {
     try {
-      let studentId;
-      let isUnique = false;
-      
-      while (!isUnique) {
-        // Generate student ID: PETF + 6 random digits
-        const randomDigits = Math.floor(100000 + Math.random() * 900000);
-        studentId = `PETF${randomDigits}`;
-        
-        // Check if this ID already exists
-        const existingStudent = await this.constructor.findOne({ studentId });
-        if (!existingStudent) {
-          isUnique = true;
-        }
-      }
-      
-      this.studentId = studentId;
+      const { generateStudentId } = require('../utilities/studentIdGenerator');
+      this.studentId = await generateStudentId();
     } catch (error) {
       return next(error);
     }
